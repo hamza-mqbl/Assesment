@@ -1,7 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const jwt = require("jsonwebtoken");
-const ErrorHandler = require("../utils/ErrorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors.js");
 const Magazine = require("../Models/Magazine.js");
 const Subscription = require("../Models/Subscription.js");

@@ -1,10 +1,7 @@
 const Plan = require("../Models/Plan");
 const express = require("express");
 const router = express.Router();
-const jwt = require("jsonwebtoken");
-const ErrorHandler = require("../utils/ErrorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors.js");
-const seedPlans = require("./seedPlans.js"); // ✅ Import properly
 
 // ✅ Create a New Plan
 router.post(
