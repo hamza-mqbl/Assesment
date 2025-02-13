@@ -5,6 +5,7 @@ const ErrorHandler = require("../utils/ErrorHandler");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors.js");
 const Magazine = require("../Models/Magazine.js");
 const Subscription = require("../Models/Subscription.js");
+
 // Subscription CRUD
 router.post('/create-subscription', async (req, res) => {
   try {
@@ -31,7 +32,7 @@ router.post('/create-subscription', async (req, res) => {
     });
 
     await subscription.save();
-    res.status(201).json(subscription);
+    res.status(201).json({ ...subscription.toObject(), magazine });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -43,10 +44,14 @@ router.get('/get-subscriptions', async (req, res) => {
       .populate({
         path: 'magazine_id',
         populate: { path: 'plans' } // Populate plans within the magazine
-      })
-      .select('_id user_id magazine_id price renewal_date is_active'); // Explicitly include _id
+      });
 
-    res.json(subscriptions);
+    const formattedSubscriptions = subscriptions.map(sub => {
+      const { _id, user_id, price, renewal_date, is_active, __v } = sub.toObject();
+      return { _id, user_id, magazine: sub.magazine_id.toObject(), price, renewal_date, is_active, __v };
+    });
+
+    res.json(formattedSubscriptions);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -54,12 +59,14 @@ router.get('/get-subscriptions', async (req, res) => {
 
 router.put('/update-subscription/:id', async (req, res) => {
   try {
-    const subscription = await Subscription.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(subscription);
+    const subscription = await Subscription.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('magazine_id');
+    if (!subscription) return res.status(404).json({ error: 'Subscription not found' });
+    res.json({ ...subscription.toObject(), magazine: subscription.magazine_id.toObject() });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
+
 router.get('/get-subscription/:id', async (req, res) => {
   try {
     const subscription = await Subscription.findById(req.params.id)
@@ -70,8 +77,8 @@ router.get('/get-subscription/:id', async (req, res) => {
     }
 
     // Flatten magazine object
-    const { _id, user_id, magazine_id, price, renewal_date, is_active, __v } = subscription.toObject();
-    const magazine = magazine_id;
+    const { _id, user_id, price, renewal_date, is_active, __v } = subscription.toObject();
+    const magazine = subscription.magazine_id.toObject();
     
     res.json({ _id, user_id, magazine, price, renewal_date, is_active, __v });
   } catch (err) {
